@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>皮卡丘动画</title>
+    <style>
+        canvas {
+            border: 1px solid #ddd;
+            margin: 20px auto;
+            display: block;
+        }
+        body {
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        let isBlinking = false;
+
+        // 基础绘图函数
+        function drawLine(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        function drawCircle(x, y, radius, fillColor) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = fillColor;
+            ctx.fill();
+        }
+
+        // 皮卡丘部件绘制
+        function drawEars() {
+            // 左耳朵
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.moveTo(300, 100);
+            ctx.bezierCurveTo(250, 50, 200, 150, 300, 200);
+            ctx.fill();
+
+            // 右耳朵
+            ctx.beginPath();
+            ctx.moveTo(500, 100);
+            ctx.bezierCurveTo(550, 50, 600, 150, 500, 200);
+            ctx.fill();
+        }
+
+        function drawFace() {
+            // 脸部基础
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(400, 300, 150, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼睛
+            drawCircle(350, 250, 20, 'black');
+            drawCircle(450, 250, 20, 'black');
+
+            // 红脸蛋
+            drawCircle(320, 350, 25, 'red');
+            drawCircle(480, 350, 25, 'red');
+
+            // 嘴巴
+            ctx.beginPath();
+            ctx.arc(400, 320, 60, 0.2, Math.PI - 0.2);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+        }
+
+        function drawBody() {
+            // 身体
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.moveTo(400, 450);
+            ctx.bezierCurveTo(250, 500, 250, 600, 400, 600);
+            ctx.bezierCurveTo(550, 600, 550, 500, 400, 450);
+            ctx.fill();
+        }
+
+        function drawHands() {
+            // 左手
+            ctx.beginPath();
+            ctx.moveTo(300, 400);
+            ctx.quadraticCurveTo(250, 450, 300, 500);
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // 右手
+            ctx.beginPath();
+            ctx.moveTo(500, 400);
+            ctx.quadraticCurveTo(550, 450, 500, 500);
+            ctx.stroke();
+        }
+
+        function drawTail() {
+            ctx.beginPath();
+            ctx.moveTo(600, 550);
+            ctx.bezierCurveTo(700, 500, 750, 600, 600, 600);
+            ctx.fillStyle = 'yellow';
+            ctx.fill();
+        }
+
+        function blinkEyes() {
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.rect(330, 240, 40, 20);
+            ctx.rect(430, 240, 40, 20);
+            ctx.fill();
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawEars();
+            drawFace();
+            drawBody();
+            drawHands();
+            drawTail();
+
+            if (isBlinking) {
+                blinkEyes();
+            }
+
+            // 随机眨眼
+            if (Math.random() < 0.02) { // 2% 概率眨眼
+                isBlinking = true;
+                setTimeout(() => {
+                    isBlinking = false;
+                }, 200);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // 初始化动画
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'black';
+        animate();
+
+        // 添加点击互动
+        canvas.addEventListener('click', () => {
+            isBlinking = true;
+            setTimeout(() => {
+                isBlinking = false;
+            }, 200);
+        });
+    </script>
+</body>
+</html>
