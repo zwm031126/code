@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专属祝福</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden; /* 隐藏滚动条 */
+        }
+        body {
+            background-color: white; /* 核心修改：背景从black改为white */
+            height: 100vh;
+            position: relative;
+        }
+        /* 飘字样式 */
+        .floating-text {
+            position: absolute;
+            color: #333; /* 飘字基础色改为深色，避免白色背景下看不见 */
+            font-family: "楷体", "KaiTi", serif;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none; /* 文字不阻挡点击 */
+        }
+        /* 弹窗样式 */
+        .tip-window {
+            position: absolute;
+            width: 200px;
+            height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: "微软雅黑", "Microsoft YaHei", sans-serif;
+            font-size: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100; /* 弹窗在最上层 */
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // ------------------------------
+        // 飘字配置
+        // ------------------------------
+        // 飘字内容（保留原有+新增关心话语）
+        const floatWords = [
+            "我想你了", "亲爱的",
+            "宝宝，好好吃饭呀", "记得添衣保暖",
+            "今天也要开心呀", "累了就休息会儿",
+            "别熬夜，早点睡", "多喝热水哦",
+            "想和你待在一起", "你今天真好看",
+            "照顾好自己呀", "见到你就很开心"
+        ];
+        const totalFloatTexts = 50; // 飘字数量
+        const floatElements = [];
+
+        // 创建飘字元素
+        function createFloatText() {
+            const text = document.createElement('div');
+            text.className = 'floating-text';
+            resetFloatText(text); // 初始化位置和样式
+            document.body.appendChild(text);
+            floatElements.push(text);
+        }
+
+        // 重置飘字属性（位置、颜色、内容等）
+        function resetFloatText(text) {
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+            // 随机位置（从下方或中间开始）
+            text.style.left = `${Math.random() * winWidth}px`;
+            text.style.bottom = `-${Math.random() * winHeight / 2}px`; // 底部外或底部内
+            // 随机颜色（核心修改：从亮色系改为深色系，适配白色背景）
+            const r = Math.floor(Math.random() * 101) + 50; // 50-150（深色范围）
+            const g = Math.floor(Math.random() * 101) + 50;
+            const b = Math.floor(Math.random() * 101) + 50;
+            text.style.color = `rgb(${r}, ${g}, ${b})`;
+            // 随机内容和速度
+            text.innerText = floatWords[Math.floor(Math.random() * floatWords.length)];
+            text.speed = 1 + Math.random() * 2; // 1-3px/帧
+            text.xSpeed = (Math.random() - 0.5) * 0.8; // 左右偏移速度
+        }
+
+        // 更新飘字位置
+        function updateFloatTexts() {
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+            floatElements.forEach(text => {
+                // 移动
+                const currentBottom = parseFloat(text.style.bottom);
+                const currentLeft = parseFloat(text.style.left);
+                text.style.bottom = `${currentBottom + text.speed}px`;
+                text.style.left = `${currentLeft + text.xSpeed}px`;
+                // 超出屏幕则重置
+                if (currentBottom > winHeight ||
+                    currentLeft < -50 || currentLeft > winWidth + 50) {
+                    resetFloatText(text);
+                }
+            });
+            requestAnimationFrame(updateFloatTexts); // 循环更新
+        }
+
+        // ------------------------------
+        // 弹窗配置（带“宝宝”昵称）
+        // ------------------------------
+        const tipTexts = [
+            '宝宝，多喝水哦~', '宝宝，保持微笑呀',
+            '宝宝，每天都要元气满满', '宝宝，记得吃水果',
+            '宝宝，保持好心情', '宝宝，好好爱自己',
+            '宝宝，我想你了', '宝宝，梦想成真',
+            '宝宝，顺顺利利', '宝宝，早点休息', '宝宝，别熬夜'
+        ];
+        const bgColors = ['lightpink', 'skyblue', 'lightgreen', 'lavender', 'lightyellow'];
+        const MAX_WINDOWS = 50; // 最大弹窗数量（手机端不宜过多）
+        let windowCount = 0;
+
+        // 创建弹窗
+        function createTipWindow() {
+            if (windowCount >= MAX_WINDOWS) return;
+            windowCount++;
+
+            const win = document.createElement('div');
+            win.className = 'tip-window';
+            // 随机位置
+            const winWidth = window.innerWidth;
+            const winHeight = window.innerHeight;
+            const left = Math.random() * (winWidth - 200); // 弹窗宽200px
+            const top = Math.random() * (winHeight - 60); // 弹窗高60px
+            win.style.left = `${left}px`;
+            win.style.top = `${top}px`;
+            // 随机内容和背景色
+            win.innerText = tipTexts[Math.floor(Math.random() * tipTexts.length)];
+            win.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+            // 点击弹窗关闭
+            win.onclick = () => {
+                document.body.removeChild(win);
+                windowCount--;
+            };
+            document.body.appendChild(win);
+        }
+
+        // 定时创建弹窗
+        function startPopTips() {
+            createTipWindow();
+            if (windowCount < MAX_WINDOWS) {
+                setTimeout(startPopTips, 500); // 每500ms创建一个
+            }
+        }
+
+        // ------------------------------
+        // 初始化运行
+        // ------------------------------
+        // 创建所有飘字
+        for (let i = 0; i < totalFloatTexts; i++) {
+            createFloatText();
+        }
+        // 启动飘字动画
+        updateFloatTexts();
+        // 启动弹窗
+        startPopTips();
+
+        // 适配窗口大小变化
+        window.onresize = () => {
+            floatElements.forEach(text => resetFloatText(text));
+        };
+    </script>
+</body>
+</html>
