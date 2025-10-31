@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>四周直射中心文字云（渐变+强立体）</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #fff;
+      /* 中心小红点，可删 */
+      background-image: radial-gradient(circle at center, rgba(255,0,0,0.6) 3px, transparent 3px);
+    }
+    .tag {
+      position: absolute;
+      padding: 6px 12px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 500;
+      white-space: nowrap;
+      animation: flyToCenter 18s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+      opacity: 0;
+      /* 增强立体：多层阴影+内发光，模拟真实凸起 */
+      box-shadow:
+        0 8px 16px rgba(0, 0, 0, 0.18), /* 外层柔阴影，体现距离感 */
+        0 4px 8px rgba(0, 0, 0, 0.12),  /* 中层阴影，强化轮廓 */
+        inset 0 1px 2px rgba(255, 255, 255, 0.4), /* 顶部内亮边，模拟反光 */
+        inset 0 -1px 2px rgba(0, 0, 0, 0.15); /* 底部内暗边，强化凹陷感 */
+      transform-style: preserve-3d;
+      transition: opacity 1.5s ease, transform 1.5s ease;
+      left: 0;
+      top: 0;
+      /* 文字立体：轻微阴影，避免文字与背景融合 */
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    /* 渐变层：专门承载渐变色，置于最下层不影响立体阴影 */
+    .tag::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      /* 渐变色通过JS动态赋值 */
+      background: linear-gradient(45deg, #ff6b6b, #ff9a8c);
+      transform: translateZ(-2px); /* 沉于标签下层，增强立体层次 */
+      z-index: -1;
+    }
+    /* 原有高光层：保留并增强，模拟表面光泽 */
+    .tag::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.18);
+      transform: translateZ(4px); /* 提高Z轴，比标签本体更突出 */
+    }
+    .tag:hover {
+      /* hover强化立体：进一步提升Z轴+扩大阴影 */
+      transform: translateZ(15px) scale(1.12);
+      box-shadow:
+        0 12px 24px rgba(0, 0, 0, 0.22),
+        0 6px 12px rgba(0, 0, 0, 0.15),
+        inset 0 1px 2px rgba(255, 255, 255, 0.45);
+      z-index: 100 !important;
+    }
+
+    /* 直飞中心（效果不变） */
+    @keyframes flyToCenter {
+      0% {
+        opacity: 0;
+        transform: translate3d(var(--start-x), var(--start-y), 0) scale(0.5);
+      }
+      30% {
+        opacity: 1;
+        transform:
+          translate3d(calc(var(--center-x) + var(--offset-x)),
+                      calc(var(--center-y) + var(--offset-y)),
+                      var(--z-depth))
+          translate(-50%, -50%)
+          scale(1);
+      }
+      80%, 100% {
+        transform:
+          translate3d(calc(var(--center-x) + var(--offset-x)),
+                      calc(var(--center-y) + var(--offset-y)),
+                      var(--z-depth))
+          translate(-50%, -50%)
+          scale(1);
+      }
+    }
+
+    /* 底层消失（效果不变） */
+    .tag.fade-out {
+      opacity: 0;
+      transform:
+        translate3d(calc(var(--center-x) + var(--offset-x)),
+                    calc(var(--center-y) + var(--offset-y)),
+                    var(--z-depth))
+        translate(-50%, -50%)
+        scale(0.9);
+    }
+  </style>
+</head>
+<body>
+  <div id="tagContainer"></div>
+  <script>
+    const texts = [
+      "生活合格祝你", "时间会治愈一切", "你真的美好看", "没有过不去的坎", "明天会更好",
+      "今天也要元气满满", "你是最美的意外", "记得多喝水", "保持可爱", "平安喜乐",
+      "记得开心", "勇敢一点", "你是独一无二的", "心怀浪漫宇宙", "做个发光的人",
+      "风雨来的都是好道", "阳光会来的", "路上注意安全", "每一天都是新的开始",
+      "梦想就在不远处", "对你的思念远远不止",, "宝宝我爱你"
+    ];
+    // 好看的渐变色组合（互补色/邻近色搭配，避免刺眼）
+    const gradientPairs = [
+      ['#ff6b6b', '#ff9a8c'], // 暖红渐变
+      ['#4ecdc4', '#45b7d1'], // 冷蓝绿渐变
+      ['#a076f9', '#7bdff2'], // 紫蓝渐变
+      ['#ffce56', '#f7d060'], // 暖黄渐变
+      ['#f28b82', '#f5cac3'], // 粉橙渐变
+      ['#84a59d', '#cb997e'], // 复古棕绿渐变
+      ['#6366f1', '#8b5cf6'], // 深紫蓝渐变
+      ['#10b981', '#34d399']  // 清新绿渐变
+    ];
+
+    const container = document.getElementById('tagContainer');
+    let centerX = window.innerWidth / 2;
+    let centerY = window.innerHeight / 2;
+    const tagQueue = [];
+    const MAX_STACK_COUNT = 25;
+
+    // 核心修复：让每个边的文本框覆盖整个边的长度（效果不变）
+    function getStartPosition() {
+      const side = Math.floor(Math.random() * 4); // 0:上 1:右 2:下 3:左
+      const distance = 250 + Math.random() * 150; // 确保起始点在屏幕外
+
+      switch(side) {
+        case 0:
+          return {
+            startX: `${Math.random() * window.innerWidth}px`,
+            startY: `-${distance}px`
+          };
+        case 1:
+          return {
+            startX: `${window.innerWidth + distance}px`,
+            startY: `${Math.random() * window.innerHeight}px`
+          };
+        case 2:
+          return {
+            startX: `${Math.random() * window.innerWidth}px`,
+            startY: `${window.innerHeight + distance}px`
+          };
+        case 3:
+          return {
+            startX: `-${distance}px`,
+            startY: `${Math.random() * window.innerHeight}px`
+          };
+      }
+    }
+
+    // 生成随机好看的渐变色（从预设组合中选，确保和谐）
+    function getRandomGradient() {
+      // 随机选一组渐变配色
+      const [color1, color2] = gradientPairs[Math.floor(Math.random() * gradientPairs.length)];
+      // 随机渐变方向（0-360deg），避免所有渐变方向一致
+      const angle = Math.floor(Math.random() * 360);
+      return `linear-gradient(${angle}deg, ${color1}, ${color2})`;
+    }
+
+    function createTag() {
+      const text = texts[Math.floor(Math.random() * texts.length)];
+      const gradient = getRandomGradient(); // 获取随机渐变
+      const tag = document.createElement('div');
+      const startPos = getStartPosition();
+      // 增强立体：扩大Z轴深度范围，层次更明显
+      const zDepth = 8 + Math.floor(Math.random() * 12);
+      const offsetX = Math.random() * 10 - 5;
+      const offsetY = Math.random() * 10 - 5;
+
+      tag.className = 'tag';
+      tag.textContent = text;
+      // 给当前标签设置独有的渐变色（通过::after伪元素）
+      tag.style.setProperty('--gradient', gradient);
+      // 动态添加样式，确保渐变生效（每个标签独立）
+      const style = document.createElement('style');
+      style.textContent = `
+        .tag:nth-child(${tagQueue.length + 1})::after {
+          background: ${gradient};
+        }
+      `;
+      document.head.appendChild(style);
+
+      tag.style.zIndex = tagQueue.length;
+      tag.style.setProperty('--start-x', startPos.startX);
+      tag.style.setProperty('--start-y', startPos.startY);
+      tag.style.setProperty('--center-x', `${centerX}px`);
+      tag.style.setProperty('--center-y', `${centerY}px`);
+      tag.style.setProperty('--offset-x', `${offsetX}px`);
+      tag.style.setProperty('--offset-y', `${offsetY}px`);
+      tag.style.setProperty('--z-depth', `${zDepth}px`);
+      tag.style.animationDelay = `${Math.random() * 3}s`;
+
+      container.appendChild(tag);
+      tagQueue.push(tag);
+
+      if (tagQueue.length > MAX_STACK_COUNT) {
+        const bottomTag = tagQueue.shift();
+        bottomTag.classList.add('fade-out');
+        setTimeout(() => {
+          if (container.contains(bottomTag)) {
+            container.removeChild(bottomTag);
+            // 移除无用样式，减少资源占用
+            document.head.removeChild(style);
+          }
+        }, 1500);
+      }
+
+      setTimeout(createTag, parseFloat(tag.style.animationDelay) * 1000 + 5000);
+    }
+
+    for (let i = 0; i < 15; i++) setTimeout(createTag, i * 800);
+
+    window.addEventListener('resize', () => {
+      centerX = window.innerWidth / 2;
+      centerY = window.innerHeight / 2;
+      document.querySelectorAll('.tag').forEach(tag => {
+        tag.style.setProperty('--center-x', `${centerX}px`);
+        tag.style.setProperty('--center-y', `${centerY}px`);
+      });
+    });
+  </script>
+</body>
+</html>
